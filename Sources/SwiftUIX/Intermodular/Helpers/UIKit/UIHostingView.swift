@@ -164,6 +164,10 @@ extension UIHostingView {
             }
         }
     }
+    
+    public var hostingController: UIViewController {
+        rootViewHostingController
+    }
 }
 
 #endif
