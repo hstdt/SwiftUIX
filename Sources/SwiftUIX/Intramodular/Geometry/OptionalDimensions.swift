@@ -159,7 +159,7 @@ extension View {
         preferredMaximumLayoutDimensions(.init(size))
     }
     
-    public func frame(
+    internal func frame(
         min dimensions: OptionalDimensions
     ) -> some View {
         frame(
@@ -168,7 +168,7 @@ extension View {
         )
     }
     
-    public func frame(
+    internal func frame(
         _ dimensions: OptionalDimensions
     ) -> some View {
         frame(
@@ -177,7 +177,7 @@ extension View {
         )
     }
 
-    public func frame(
+    internal func frame(
         max dimensions: OptionalDimensions
     ) -> some View {
         frame(
