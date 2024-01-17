@@ -9,7 +9,7 @@ extension View {
     /// Causes the view to greedily fill into its container.
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         _ size: _GreedyFrameSize,
         alignment: Alignment = .center
     ) -> some View {
@@ -18,7 +18,7 @@ extension View {
     
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         width: _GreedyFrameSize,
         alignment: Alignment = .center
     ) -> some View {
@@ -27,7 +27,7 @@ extension View {
     
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         width: _GreedyFrameSize,
         minHeight: CGFloat? = nil,
         idealHeight: CGFloat? = nil,
@@ -49,7 +49,7 @@ extension View {
 
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         width: _GreedyFrameSize,
         height: CGFloat?,
         alignment: Alignment = .center
@@ -59,7 +59,7 @@ extension View {
     
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         width: CGFloat?,
         height: _GreedyFrameSize,
         alignment: Alignment = .center
@@ -69,7 +69,7 @@ extension View {
     
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         height: _GreedyFrameSize,
         alignment: Alignment = .center
     ) -> some View {
@@ -78,7 +78,7 @@ extension View {
     
     @_disfavoredOverload
     @inlinable
-    public func frame(
+    internal func frame(
         _ size: _GreedyFrameSize,
         _ axis: Axis,
         alignment: Alignment = .center
@@ -93,7 +93,7 @@ extension View {
     
     @_disfavoredOverload
     @available(*, message: "greedyFrame() is deprecated, use frame(.greedy) instead")
-    public func greedyFrame(alignment: Alignment = .center) -> some View {
+    internal func greedyFrame(alignment: Alignment = .center) -> some View {
         frame(.greedy)
     }
 }
@@ -169,12 +169,12 @@ extension View {
 
 extension View {
     @inlinable
-    public func width(_ width: CGFloat?) -> some View {
+    internal func width(_ width: CGFloat?) -> some View {
         frame(width: width)
     }
     
     @inlinable
-    public func height(_ height: CGFloat?) -> some View {
+    internal func height(_ height: CGFloat?) -> some View {
         frame(height: height)
     }
     
@@ -185,7 +185,7 @@ extension View {
     /// resulting view assumes this view's sizing behavior in the other
     /// dimension.
     @inlinable
-    public func frame(_ size: CGSize?, alignment: Alignment = .center) -> some View {
+    internal func frame(_ size: CGSize?, alignment: Alignment = .center) -> some View {
         frame(width: size?.width, height: size?.height, alignment: alignment)
     }
     
@@ -196,7 +196,7 @@ extension View {
     /// resulting view assumes this view's sizing behavior in the other
     /// dimension.
     @inlinable
-    public func frame(min size: CGSize?, alignment: Alignment = .center) -> some View {
+    internal func frame(min size: CGSize?, alignment: Alignment = .center) -> some View {
         frame(minWidth: size?.width, minHeight: size?.height, alignment: alignment)
     }
     
@@ -207,7 +207,7 @@ extension View {
     /// resulting view assumes this view's sizing behavior in the other
     /// dimension.
     @inlinable
-    public func frame(max size: CGSize?, alignment: Alignment = .center) -> some View {
+    internal func frame(max size: CGSize?, alignment: Alignment = .center) -> some View {
         frame(maxWidth: size?.width, maxHeight: size?.height, alignment: alignment)
     }
     /// Positions this view within an invisible frame with the specified size.
@@ -217,7 +217,7 @@ extension View {
     /// resulting view assumes this view's sizing behavior in the other
     /// dimension.
     @inlinable
-    public func frame(
+    internal func frame(
         min minSize: CGSize?,
         max maxSize: CGSize?,
         alignment: Alignment = .center
@@ -232,7 +232,7 @@ extension View {
     }
     
     @_disfavoredOverload
-    public func frame(
+    internal func frame(
         width: ClosedRange<CGFloat>? = nil,
         idealWidth: CGFloat? = nil,
         height: ClosedRange<CGFloat>? = nil,
@@ -251,27 +251,27 @@ extension View {
 
 extension View {
     @inlinable
-    public func minWidth(_ width: CGFloat?) -> some View {
+    internal func minWidth(_ width: CGFloat?) -> some View {
         frame(minWidth: width)
     }
     
     @inlinable
-    public func maxWidth(_ width: CGFloat?) -> some View {
+    internal func maxWidth(_ width: CGFloat?) -> some View {
         frame(maxWidth: width)
     }
     
     @inlinable
-    public func minHeight(_ height: CGFloat?) -> some View {
+    internal func minHeight(_ height: CGFloat?) -> some View {
         frame(minHeight: height)
     }
     
     @inlinable
-    public func maxHeight(_ height: CGFloat?) -> some View {
+    internal func maxHeight(_ height: CGFloat?) -> some View {
         frame(maxHeight: height)
     }
     
     @inlinable
-    public func frame(min dimensionLength: CGFloat, axis: Axis) -> some View {
+    internal func frame(min dimensionLength: CGFloat, axis: Axis) -> some View {
         switch axis {
             case .horizontal:
                 return frame(minWidth: dimensionLength)
@@ -284,13 +284,13 @@ extension View {
 extension View {
     /// Positions this view within an invisible frame having the specified ideal size constraints.
     @inlinable
-    public func idealFrame(width: CGFloat?, height: CGFloat?) -> some View {
+    internal func idealFrame(width: CGFloat?, height: CGFloat?) -> some View {
         frame(idealWidth: width, idealHeight: height)
     }
     
     /// Positions this view within an invisible frame having the specified ideal size constraints.
     @inlinable
-    public func idealMinFrame(
+    internal func idealMinFrame(
         width: CGFloat?,
         maxWidth: CGFloat? = nil,
         height: CGFloat?,
