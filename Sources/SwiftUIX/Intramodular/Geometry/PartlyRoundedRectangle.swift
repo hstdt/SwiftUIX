@@ -15,7 +15,7 @@ public struct PartRoundedRectangle {
     }
 }
 
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || os(macOS) || os(tvOS) || os(visionOS) || targetEnvironment(macCatalyst)
 extension PartRoundedRectangle: Shape {
     public func path(in rect: CGRect) -> Path {
         Path(
@@ -32,7 +32,7 @@ extension PartRoundedRectangle: Shape {
 
 // MARK: - API
 
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || os(macOS) || os(tvOS) || os(visionOS) || targetEnvironment(macCatalyst)
 extension View {
     @inlinable
     public func cornerRadius(

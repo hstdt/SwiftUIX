@@ -68,7 +68,7 @@ extension RectangleCorner {
 
 // MARK: - Auxiliary
 
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || os(macOS) || os(tvOS) || os(visionOS) || targetEnvironment(macCatalyst)
 
 extension AppKitOrUIKitRectCorner {
     public init<S: Sequence>(_ corners: S) where S.Element == RectangleCorner {
