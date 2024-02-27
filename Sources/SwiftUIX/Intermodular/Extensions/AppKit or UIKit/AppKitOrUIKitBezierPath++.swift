@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-#if os(iOS) || os(macOS) || os(tvOS) || targetEnvironment(macCatalyst)
+#if os(iOS) || os(macOS) || os(tvOS) || os(visionOS) || targetEnvironment(macCatalyst)
 extension AppKitOrUIKitBezierPath {
     public convenience init(
         roundedRect rect: CGRect,
@@ -82,7 +82,7 @@ extension AppKitOrUIKitBezierPath {
 }
 #endif
 
-#if os(iOS) || os(tvOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 extension AppKitOrUIKitBezierPath {
     var _cgPath: CGPath {
         cgPath
