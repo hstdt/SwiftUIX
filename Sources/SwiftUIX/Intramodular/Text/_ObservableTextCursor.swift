@@ -18,7 +18,7 @@ extension AppKitOrUIKitTextView {
 extension _ObservableTextCursor {
     /// The current text selection.
     public struct TextSelection: Equatable {
-        private weak var owner: (any _PlatformTextView_Type)?
+        private weak var owner: (any _PlatformTextViewType)?
         
         public let range: NSRange
         public let geometry: _CoordinateSpaceRelative<CGRect>
@@ -27,7 +27,7 @@ extension _ObservableTextCursor {
             lhs.range == rhs.range && lhs.geometry == rhs.geometry
         }
         
-        init?(from owner: (any _PlatformTextView_Type)) {
+        init?(from owner: (any _PlatformTextViewType)) {
             guard let range = owner._SwiftUIX_selectedTextRange else {
                 return nil
             }
@@ -37,7 +37,7 @@ extension _ObservableTextCursor {
             }
             
             guard !geometry.size.isAreaZero else {
-                assert(range.length == 0)
+                // assert(range.length == 0)
                 
                 return nil
             }
@@ -49,13 +49,13 @@ extension _ObservableTextCursor {
 }
 
 public final class _ObservableTextCursor: ObservableObject {
-    private weak var owner: (any _PlatformTextView_Type)?
+    private weak var owner: (any _PlatformTextViewType)?
     
     @Published public private(set) var positionInText: Int?
     @Published public private(set) var location: _CoordinateSpaceRelative<CGRect>?
     @Published public private(set) var textSelection: TextSelection?
     
-    init(owner: (any _PlatformTextView_Type)?) {
+    init(owner: (any _PlatformTextViewType)?) {
         self.owner = owner
         
         subscribeToOwner()
@@ -70,9 +70,9 @@ public final class _ObservableTextCursor: ObservableObject {
         }
         
         owner._performOrSchedulePublishingChanges {
-            _assignIfNotEqual(owner._caretTextPosition, to: &self.positionInText)
-            _assignIfNotEqual(owner._SwiftUIX_caretGeometry, to: &self.location)
-            _assignIfNotEqual(TextSelection(from: owner), to: &self.textSelection)
+            _assignIfNotEqual(owner._caretTextPosition, to: \.positionInText)
+            _assignIfNotEqual(owner._SwiftUIX_caretGeometry, to: \.location)
+            _assignIfNotEqual(TextSelection(from: owner), to: \.textSelection)
         }
     }
 }

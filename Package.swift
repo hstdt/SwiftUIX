@@ -1,4 +1,4 @@
-// swift-tools-version:5.8
+// swift-tools-version:5.9
 
 import PackageDescription
 
@@ -25,7 +25,7 @@ let package = Package(
             dependencies: [],
             swiftSettings: [
                 .unsafeFlags([
-                    "-enable-library-evolution", "-suppress-warnings"
+                    "-suppress-warnings"
                 ])
             ]
         ),
@@ -34,11 +34,7 @@ let package = Package(
             dependencies: [
                 "_SwiftUIX"
             ],
-            swiftSettings: [
-                .unsafeFlags([
-                    "-enable-library-evolution",
-                ])
-            ]
+            swiftSettings: []
         )
     ]
 )

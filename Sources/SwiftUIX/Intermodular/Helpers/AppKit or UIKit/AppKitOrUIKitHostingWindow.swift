@@ -201,15 +201,17 @@ public final class AppKitOrUIKitHostingWindow<Content: View>: AppKitOrUIKitWindo
         }
         #elseif os(macOS)
         if let backgroundColor = configuration.backgroundColor?.toAppKitOrUIKitColor() {
-            self.backgroundColor = backgroundColor
+            _assignIfNotEqual(backgroundColor, to: \.backgroundColor)
         }
         
-        if self.backgroundColor == .clear {
-            _assignIfNotEqual(false, to: \.isOpaque)
-            _assignIfNotEqual(false, to: \.hasShadow)
-        } else {
-            _assignIfNotEqual(true, to: \.isOpaque)
-            _assignIfNotEqual(true, to: \.hasShadow)
+        if configuration.style != .plain {
+            if self.backgroundColor == .clear {
+                _assignIfNotEqual(false, to: \.isOpaque)
+                _assignIfNotEqual(false, to: \.hasShadow)
+            } else {
+                _assignIfNotEqual(true, to: \.isOpaque)
+                _assignIfNotEqual(true, to: \.hasShadow)
+            }
         }
         
         if configuration.style == .default {
@@ -288,6 +290,11 @@ public final class AppKitOrUIKitHostingWindow<Content: View>: AppKitOrUIKitWindo
                 self.contentViewController = contentViewController
                 self.configuration.style = style
                 
+                if #available(macOS 13.0, *) {
+                    collectionBehavior.insert(.auxiliary)
+                }
+                
+                level = .floating
                 backgroundColor = NSColor.clear
                 isOpaque = false
                 styleMask.insert(NSWindow.StyleMask.fullSizeContentView)
@@ -534,6 +541,15 @@ extension View {
         windowPosition(CGPoint(x: x, y: y))
     }
     
+    public func windowPosition(
+        _ point: _CoordinateSpaceRelative<CGPoint>
+    ) -> some View {
+        preference(
+            key: _SwiftUIX_WindowPreferenceKeys.Position.self,
+            value: point
+        )
+    }
+    
     /// Sets the background color of the presented window.
     public func windowOverlayBackgroundColor(_ backgroundColor: Color) -> some View {
         preference(key: _SwiftUIX_WindowPreferenceKeys.BackgroundColor.self, value: backgroundColor)
@@ -697,8 +713,8 @@ extension AppKitOrUIKitHostingWindow {
         if configuration.windowPosition != position {
             configuration.windowPosition = position
         }
-
-        guard let sourceWindow = windowPresentationController?._sourceAppKitOrUIKitWindow ?? position._sourceAppKitOrUIKitWindow else {
+        
+        guard let sourceWindow = windowPresentationController?._sourceAppKitOrUIKitWindow ?? position._sourceAppKitOrUIKitWindow ?? AppKitOrUIKitApplication.shared.windows.first else {
             assertionFailure()
             
             return
@@ -709,16 +725,25 @@ extension AppKitOrUIKitHostingWindow {
                 origin: position,
                 size: self.frame.size
             )
-
+            
             rect.origin.y = sourceWindow.frame.height - position.y
             
             position = sourceWindow.convertToScreen(rect).origin
-                             
+            
             let origin = CGPoint(
                 x: position.x - (self.frame.size.width / 2),
                 y: position.y - (self.frame.size.height / 2)
             )
             
+            setFrameOrigin(origin)
+        } else if let (point, position) = position.first(where: { $0._cocoaScreen != nil }) {
+            let screen = point._cocoaScreen!
+            
+            let origin = CGPoint(
+                x: position.x,
+                y: screen.height - (position.y + self.frame.size.height)
+            )
+
             setFrameOrigin(origin)
         } else if let (_, _) = position.first(where: { $0._cocoaScreen != nil }) {
             assertionFailure("unimplemented")
