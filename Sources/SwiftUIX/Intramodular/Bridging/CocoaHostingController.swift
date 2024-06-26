@@ -50,7 +50,15 @@ open class CocoaHostingController<Content: View>: AppKitOrUIKitHostingController
     var _didResizeParentWindowOnce: Bool = false
 
     #if os(macOS)
-    weak var parentPopover: NSPopover?
+    weak var _SwiftUIX_parentNSPopover: NSPopover? {
+        didSet {
+            if _SwiftUIX_parentNSPopover != nil {
+                if #available(macOS 13.0, *) {
+                    _assignIfNotEqual([.preferredContentSize], to: \.sizingOptions)
+                }
+            }
+        }
+    }
     #endif
     
     public var mainView: Content {
@@ -121,6 +129,15 @@ open class CocoaHostingController<Content: View>: AppKitOrUIKitHostingController
     
     @objc required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func withCriticalScope<Result>(
+        _ flags: Set<_CocoaHostingViewConfigurationFlag>,
+        perform action: () -> Result
+    ) -> Result {
+        assertionFailure("unimplemented")
+    
+        return action()
     }
     
     public func _configureSizingOptions(for type: AppKitOrUIKitResponder.Type) {
@@ -199,7 +216,7 @@ open class CocoaHostingController<Content: View>: AppKitOrUIKitHostingController
         #if os(macOS)
         if !size.isAreaZero {
             DispatchQueue.main.async { [weak self] in
-                if let popover = self?.parentPopover {
+                if let popover = self?._SwiftUIX_parentNSPopover {
                     popover._assignIfNotEqual(size, to: \.contentSize)
                 } else {
                     self?._assignIfNotEqual(size, to: \.preferredContentSize)
@@ -209,11 +226,16 @@ open class CocoaHostingController<Content: View>: AppKitOrUIKitHostingController
         #endif
     }
     
-    public func _namedViewDescription(for name: AnyHashable) -> _NamedViewDescription? {
+    public func _namedViewDescription(
+        for name: AnyHashable
+    ) -> _NamedViewDescription? {
         _namedViewDescriptions[name]
     }
     
-    public func _setNamedViewDescription(_ description: _NamedViewDescription?, for name: AnyHashable) {
+    public func _setNamedViewDescription(
+        _ description: _NamedViewDescription?,
+        for name: AnyHashable
+    ) {
         _namedViewDescriptions[name] = description
     }
     

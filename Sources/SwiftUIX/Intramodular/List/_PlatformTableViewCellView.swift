@@ -293,14 +293,14 @@ class _PlatformTableCellView<Configuration: _CocoaListConfigurationType>: NSTabl
         let result: ContentHostingView
         
         if let _result = self._expensiveCache?.decacheContentView() {
-           // let bestSizeEstimate = self._cheapCache?.lastContentSize ?? self.frame.size
-
+            let bestSizeEstimate = self._cheapCache?.lastContentSize ?? self.frame.size
+            
             result = _result
-                        
+            
             if !result.frame.size._isInvalidForIntrinsicContentSize, result.frame.size != self.frame.size {
-                // self.frame.size = result.frame.size
+                self.frame.size = result.frame.size
             } else if result.frame.size._isInvalidForIntrinsicContentSize {
-                // result.frame.size = bestSizeEstimate
+                result.frame.size = bestSizeEstimate
             }
             
             self._contentHostingView = result
@@ -394,7 +394,12 @@ extension _PlatformTableCellView {
     }
     
     var _maximumContentViewWidth: CGFloat? {
-        frame.width - ((enclosingScrollView?.contentInsets.left ?? 0) + (enclosingScrollView?.contentInsets.right ?? 0))
+        var result: CGFloat = frame.width
+        
+        result -= (enclosingScrollView?.contentInsets.left ?? 0)
+        result -= (enclosingScrollView?.contentInsets.right ?? 0)
+        
+        return result
     }
     
     var _fastRowHeight: CGFloat? {

@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 
 import PackageDescription
 
@@ -22,19 +22,13 @@ let package = Package(
     targets: [
         .target(
             name: "_SwiftUIX",
-            dependencies: [],
-            swiftSettings: [
-                .unsafeFlags([
-                    "-suppress-warnings"
-                ])
-            ]
+            dependencies: []
         ),
         .target(
             name: "SwiftUIX",
             dependencies: [
                 "_SwiftUIX"
-            ],
-            swiftSettings: []
+            ]
         )
     ]
 )
