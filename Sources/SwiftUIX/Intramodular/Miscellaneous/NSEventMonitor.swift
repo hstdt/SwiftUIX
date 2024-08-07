@@ -21,6 +21,34 @@ public protocol _NSEventMonitorType {
         matching: NSEvent.EventTypeMask,
         handleEvent: @escaping (NSEvent) -> NSEvent?
     ) throws
+    
+    func start() throws
+    func stop() throws
+}
+
+@available(macOS 12.0, *)
+extension _NSEventMonitorType {
+    public init(
+        matching shortcuts: [KeyboardShortcut],
+        context: NSEventMonitor.Context = .local,
+        perform action: @escaping (KeyboardShortcut) -> Void
+    ) throws {
+        let shortcuts = Set(shortcuts)
+        
+        try self.init(context: context, matching: [.keyDown]) { event -> NSEvent? in
+            guard let shortcut = KeyboardShortcut(from: event) else {
+                return event
+            }
+            
+            guard shortcuts.contains(shortcut) else {
+                return event
+            }
+            
+            _ = action(shortcut)
+            
+            return nil
+        }
+    }
 }
 
 public final class NSEventMonitor: _NSEventMonitorType {
@@ -31,6 +59,13 @@ public final class NSEventMonitor: _NSEventMonitorType {
     private var monitor: Any?
     
     public var handleEvent: (NSEvent) -> NSEvent? = { $0 }
+    
+    private enum State {
+        case active
+        case inactive
+    }
+    
+    @Published private var state: State = .active
     
     public init(
         context: Context,
@@ -44,7 +79,15 @@ public final class NSEventMonitor: _NSEventMonitorType {
         start()
     }
     
-    private func start() {
+    public func start() {
+        guard monitor == nil else {
+            return
+        }
+        
+        defer {
+            state = .active
+        }
+        
         switch self.context {
             case .local:
                 monitor = NSEvent.addLocalMonitorForEvents(matching: eventTypeMask) { [weak self] event in
@@ -63,12 +106,18 @@ public final class NSEventMonitor: _NSEventMonitorType {
         }
     }
     
-    private func stop() {
-        if let monitor = monitor {
-            NSEvent.removeMonitor(monitor)
-            
-            self.monitor = nil
+    public func stop() {
+        guard let monitor = monitor else {
+            return
         }
+        
+        defer {
+            state = .inactive
+        }
+        
+        NSEvent.removeMonitor(monitor)
+        
+        self.monitor = nil
     }
     
     deinit {
@@ -84,21 +133,25 @@ extension View {
     public func onAppKitEvent(
         context: NSEventMonitor.Context = .local,
         matching mask: NSEvent.EventTypeMask,
+        using eventMonitorType: _NSEventMonitorType.Type = NSEventMonitor.self,
         perform action: @escaping (NSEvent) -> NSEvent?
     ) -> some View {
         modifier(
             _AttachNSEventMonitor(
-                eventMonitor: .init(context: context, matching: mask),
-                handleEvent: action
+                context: context,
+                eventMask: mask,
+                handleEvent: action,
+                eventMonitorType: eventMonitorType
             )
         )
     }
     
     public func onAppKitKeyboardShortcutEvent(
         context: NSEventMonitor.Context = .local,
+        using eventMonitorType: _NSEventMonitorType.Type = NSEventMonitor.self,
         perform action: @escaping (KeyboardShortcut) -> Bool
     ) -> some View {
-        onAppKitEvent(context: context, matching: [.keyDown]) { event in
+        onAppKitEvent(context: context, matching: [.keyDown], using: eventMonitorType) { event in
             guard let shortcut = KeyboardShortcut(from: event) else {
                 return event
             }
@@ -112,9 +165,15 @@ extension View {
     @available( macOS 12.0, *)
     public func onAppKitKeyboardShortcutEvent(
         _ shortcutToMatch: KeyboardShortcut,
+        context: NSEventMonitor.Context = .local,
+        using eventMonitorType: _NSEventMonitorType.Type = NSEventMonitor.self,
         perform action: @escaping () -> Void
     ) -> some View {
-        onAppKitEvent(context: .local, matching: [.keyDown]) { event in
+        onAppKitEvent(
+            context: .local,
+            matching: [.keyDown],
+            using: eventMonitorType
+        ) { (event: NSEvent) in
             guard let shortcut = KeyboardShortcut(from: event) else {
                 return event
             }
@@ -129,14 +188,46 @@ extension View {
         }
     }
     
+    @available(macOS 12.0, *)
+    public func onAppKitKeyboardShortcutEvents(
+        _ shortcuts: [KeyboardShortcut],
+        context: NSEventMonitor.Context = .local,
+        using eventMonitorType: _NSEventMonitorType.Type = NSEventMonitor.self,
+        perform action: @escaping (KeyboardShortcut) -> Void
+    ) -> some View {
+        let shortcuts = Set(shortcuts)
+        
+        return onAppKitEvent(
+            context: .local,
+            matching: [.keyDown],
+            using: eventMonitorType
+        ) { (event: NSEvent) in
+            guard let shortcut = KeyboardShortcut(from: event) else {
+                return event
+            }
+            
+            guard shortcuts.contains(shortcut) else {
+                return event
+            }
+            
+            _ = action(shortcut)
+            
+            return nil
+        }
+    }
+    
     @available( macOS 12.0, *)
     public func onAppKitKeyboardShortcutEvent(
         _ key: KeyEquivalent,
         modifiers: SwiftUI.EventModifiers = [.command],
+        context: NSEventMonitor.Context = .local,
+        using eventMonitorType: _NSEventMonitorType.Type = NSEventMonitor.self,
         perform action: @escaping () -> Void
     ) -> some View {
         onAppKitKeyboardShortcutEvent(
-            .init(key, modifiers: modifiers),
+            KeyboardShortcut(key, modifiers: modifiers),
+            context: context,
+            using: eventMonitorType,
             perform: action
         )
     }
@@ -145,16 +236,55 @@ extension View {
 // MARK: - Auxiliary
 
 private struct _AttachNSEventMonitor: ViewModifier {
-    @State var eventMonitor: NSEventMonitor
-    
+    let context: NSEventMonitor.Context
+    let eventMask: NSEvent.EventTypeMask
     let handleEvent: (NSEvent) -> NSEvent?
     
+    let eventMonitorType: any _NSEventMonitorType.Type
+    
+    @ViewStorage private var handleEventTrampoline: (NSEvent) -> NSEvent?
+    @ViewStorage private var eventMonitor: (any _NSEventMonitorType)!
+    
+    init(
+        context: NSEventMonitor.Context,
+        eventMask: NSEvent.EventTypeMask,
+        handleEvent: @escaping (NSEvent) -> NSEvent?,
+        eventMonitorType: any _NSEventMonitorType.Type
+    ) {
+        self.context = context
+        self.eventMask = eventMask
+        self.handleEvent = handleEvent
+        self.eventMonitorType = eventMonitorType
+        self._handleEventTrampoline = .init(wrappedValue: handleEvent)
+    }
+    
     func body(content: Content) -> some View {
-        content.background {
-            PerformAction {
-                eventMonitor.handleEvent = handleEvent
+        content
+            .background {
+                PerformAction(deferred: false) {
+                    self.handleEventTrampoline = handleEvent
+                    
+                    if self.eventMonitor == nil {
+                        self.eventMonitor = try! eventMonitorType.init(context: context, matching: eventMask, handleEvent: {
+                            self.handleEventTrampoline($0)
+                        })
+                    }
+                }
             }
-        }
+            .onAppear {
+                do {
+                    try self.eventMonitor?.start()
+                } catch {
+                    assertionFailure(String(describing: error))
+                }
+            }
+            .onDisappear {
+                do {
+                    try self.eventMonitor?.stop()
+                } catch {
+                    assertionFailure(String(describing: error))
+                }
+            }
     }
 }
 

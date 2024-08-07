@@ -55,6 +55,19 @@ public struct WindowProxy {
 @available(macCatalystApplicationExtension, unavailable)
 @available(iOSApplicationExtension, unavailable)
 @available(tvOSApplicationExtension, unavailable)
+extension _WindowPresentationController {
+    public func bringToFront() {
+        self.contentWindow.bringToFront()
+    }
+    
+    public func moveToBack() {
+        self.contentWindow.moveToBack()
+    }
+}
+
+@available(macCatalystApplicationExtension, unavailable)
+@available(iOSApplicationExtension, unavailable)
+@available(tvOSApplicationExtension, unavailable)
 public struct WindowReader<Content: View>: View {
     @Environment(\._windowProxy) var _windowProxy: WindowProxy
     
@@ -75,18 +88,27 @@ public struct WindowReader<Content: View>: View {
 @available(macCatalystApplicationExtension, unavailable)
 @available(iOSApplicationExtension, unavailable)
 @available(tvOSApplicationExtension, unavailable)
-extension _WindowPresentationController {
+extension AppKitOrUIKitHostingWindow {
     public func bringToFront() {
-        self.contentWindow?.level = .screenSaver
-        self.contentWindow?.orderFrontRegardless()
+        level = .screenSaver
+        orderFrontRegardless()
+    }
+    
+    public func moveToBack() {
+        level = .normal
+        orderOut(nil)
     }
 }
 #else
 @available(macCatalystApplicationExtension, unavailable)
 @available(iOSApplicationExtension, unavailable)
 @available(tvOSApplicationExtension, unavailable)
-extension _WindowPresentationController {
+extension AppKitOrUIKitHostingWindow {
     public func bringToFront() {
+        
+    }
+    
+    public func moveToBack() {
         
     }
 }

@@ -10,19 +10,25 @@ extension DispatchQueue {
     @_spi(Internal)
     @_transparent
     public static func asyncOnMainIfNecessary(
-        _ necessary: Bool? = nil,
-        execute work: @escaping () -> ()
+        force: Bool? = nil,
+        @_implicitSelfCapture execute work: @MainActor @escaping () -> ()
     ) {
-        if let necessary {
-            guard necessary == false else {
-                DispatchQueue.main.async(execute: work)
+        if let force {
+            guard force == false else {
+                DispatchQueue.main.async(execute: {
+                    MainActor.assumeIsolated {
+                        work()
+                    }
+                })
                 
                 return
             }
         }
         
         if Thread.isMainThread {
-            work()
+            MainActor.assumeIsolated {
+                work()
+            }
         } else {
             DispatchQueue.main.async(execute: work)
         }

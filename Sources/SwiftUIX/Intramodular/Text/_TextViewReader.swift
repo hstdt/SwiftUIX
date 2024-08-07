@@ -39,14 +39,16 @@ public struct _TextViewReader<Content: View>: View {
     ) {
         self.content = content
     }
-    
+
     public var body: some View {
+        let proxyBinding = $proxy.binding
+        
         content(proxy)
-            .environment(\._textViewProxy, Binding(get: { proxy }, set: { proxy = $0 }))
+            .environment(\._textViewProxyBinding, .init(wrappedValue: proxyBinding))
     }
 }
 
-public final class _TextEditorProxy: Equatable, ObservableObject {
+public final class _TextEditorProxy: Hashable, ObservableObject, @unchecked Sendable {
     public typealias _Base = any _SwiftUIX_AnyIndirectValueBox<AppKitOrUIKitTextView?>
     
     let _base = WeakReferenceBox<AppKitOrUIKitTextView>(nil)
@@ -58,6 +60,10 @@ public final class _TextEditorProxy: Equatable, ObservableObject {
         get {
             _base.wrappedValue.map({ $0 as! any _PlatformTextViewType })
         } set {
+            guard _base.wrappedValue !== newValue else {
+                return
+            }
+            
             objectWillChange.send()
             
             _base.wrappedValue = newValue
@@ -83,19 +89,23 @@ public final class _TextEditorProxy: Equatable, ObservableObject {
     public static func == (lhs: _TextEditorProxy, rhs: _TextEditorProxy) -> Bool {
         lhs.base === rhs.base
     }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.base.map({ ObjectIdentifier($0) }))
+    }
 }
 
 // MARK: - Auxiliary
 
 extension _TextEditorProxy {
     fileprivate struct EnvironmentKey: SwiftUI.EnvironmentKey {
-        static let defaultValue: Binding<_TextEditorProxy>? = nil
+        static var defaultValue: _SwiftUIX_HashableBinding<_TextEditorProxy>.Optional = .init(wrappedValue: nil)
     }
 }
 
 extension EnvironmentValues {
     @usableFromInline
-    var _textViewProxy: Binding<_TextEditorProxy>? {
+    var _textViewProxyBinding: _SwiftUIX_HashableBinding<_TextEditorProxy>.Optional {
         get {
             self[_TextEditorProxy.EnvironmentKey.self]
         } set {

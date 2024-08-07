@@ -15,16 +15,19 @@ public struct MenuBarItem<ID, Label: View, Content: View> {
     
     internal let length: CGFloat?
     
+    public let action: (@MainActor () -> Void)?
     public let label: Label
     public let content: Content
     
     public init(
         id: ID,
         length: CGFloat?,
+        action: (@MainActor () -> Void)?,
         label: Label,
         content: Content
     ) {
         self.id = id
+        self.action = action
         self.length = length
         self.label = label
         self.content = content
@@ -35,17 +38,20 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
     fileprivate init(
         id: ID,
         length: CGFloat?,
+        action: (@MainActor () -> Void)?,
         label: _MenuBarExtraLabelContent,
         content: Content
     ) {
         self.id = id
         self.length = length
+        self.action = action
         self.label = label
         self.content = content
     }
     
     public init(
         id: ID,
+        action: (@MainActor () -> Void)?,
         length: CGFloat? = nil,
         image: _AnyImage,
         imageSize: CGSize? = nil,
@@ -54,6 +60,7 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
         self.init(
             id: id,
             length: length ?? 28.0,
+            action: action,
             label: .image(
                 image._preferredSize(imageSize ?? CGSize(width: 18.0, height: 18.0))
             ),
@@ -63,6 +70,7 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
     
     public init(
         id: ID,
+        action: (@MainActor () -> Void)?,
         length: CGFloat? = nil,
         image: _AnyImage.Name,
         imageSize: CGSize? = nil,
@@ -71,6 +79,7 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
         self.init(
             id: id,
             length: length,
+            action: action,
             label: .image(
                 _AnyImage(named: image)._preferredSize(imageSize)
             ),
@@ -80,6 +89,7 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
     
     public init(
         id: ID,
+        action: (@MainActor () -> Void)?,
         length: CGFloat? = 28.0,
         text: String,
         @ViewBuilder content: () -> Content
@@ -87,6 +97,7 @@ extension MenuBarItem where Label == _MenuBarExtraLabelContent {
         self.init(
             id: id,
             length: length,
+            action: action,
             label: .text(text),
             content: content()
         )
@@ -101,6 +112,7 @@ extension MenuBarItem: Identifiable where ID: Hashable {
 
 #if os(macOS)
 
+@MainActor
 extension View {
     /// Adds a menu bar item configured to present a popover when clicked.
     public func menuBarItem<ID: Hashable, Content: View>(
@@ -113,6 +125,7 @@ extension View {
             InsertMenuBarPopover(
                 item: MenuBarItem(
                     id: id,
+                    action: nil,
                     image: image,
                     content: content
                 ),
@@ -144,7 +157,7 @@ extension View {
     ) -> some View {
         modifier(
             InsertMenuBarPopover(
-                item: MenuBarItem(id: id, image: .system(image), content: content),
+                item: MenuBarItem(id: id, action: nil, image: .system(image), content: content),
                 isActive: isActive
             )
         )

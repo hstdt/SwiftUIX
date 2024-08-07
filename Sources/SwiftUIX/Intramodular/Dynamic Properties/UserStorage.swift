@@ -14,7 +14,9 @@ public struct UserStorage<Value: Codable>: DynamicProperty {
     
     public var wrappedValue: Value {
         get {
-            valueBox.value
+            let result: Value = valueBox.value
+            
+            return result
         } nonmutating set {
             valueBox.value = newValue
         }
@@ -22,10 +24,18 @@ public struct UserStorage<Value: Codable>: DynamicProperty {
     
     /// The binding value, as "unwrapped" by accessing `$foo` on a `@Binding` property.
     public var projectedValue: Binding<Value> {
-        return .init(
-            get: { self.wrappedValue },
-            set: { self.wrappedValue = $0 }
+        return Binding<Value>(
+            get: {
+                self.wrappedValue
+            },
+            set: { (newValue: Value) in
+                self.wrappedValue = newValue
+            }
         )
+    }
+    
+    public func update() {
+        self.valueBox._readInitial()
     }
     
     public init(
@@ -89,6 +99,14 @@ public struct UserStorage<Value: Codable>: DynamicProperty {
     }
 }
 
+// MARK: - Conformances
+
+extension UserStorage: Equatable where Value: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.wrappedValue == rhs.wrappedValue
+    }
+}
+
 // MARK: - Auxiliary
 
 extension UserStorage {
@@ -111,11 +129,13 @@ extension UserStorage {
             } set {
                 do {
                     objectWillChange.send()
-
+                    
                     storedValue = newValue
                     
                     _isEncodingValueToStore = true
+                   
                     try store.encode(newValue, forKey: key)
+                                        
                     _isEncodingValueToStore = false
                 } catch {
                     if _isStrict {
@@ -139,6 +159,12 @@ extension UserStorage {
             self.store = store
             self._areValuesEqual = _areValuesEqual
             self._isStrict = _isStrict
+        }
+        
+        fileprivate func _readInitial() {
+            guard storeSubscription == nil else {
+                return
+            }
             
             do {
                 storedValue = try store.decode(Value.self, forKey: key) ?? defaultValue
@@ -153,7 +179,7 @@ extension UserStorage {
                 }
                 .map {
                     do {
-                        return try store.decode(Value.self, from: $0)
+                        return try self.store.decode(Value.self, from: $0)
                     } catch {
                         self.handleError(error)
                         

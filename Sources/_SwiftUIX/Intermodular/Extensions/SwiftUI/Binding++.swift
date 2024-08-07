@@ -8,7 +8,16 @@ import SwiftUI
 extension Binding {
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public init(_from binding: FocusState<Value>.Binding) where Value: Hashable {
-        self.init(get: { binding.wrappedValue }, set: { binding.wrappedValue = $0 })
+        let box = _SwiftUIX_UnsafeSendableReferenceBox(wrappedValue: binding)
+        
+        self.init(
+            get: {
+                box.wrappedValue.wrappedValue
+            },
+            set: {
+                box.wrappedValue.wrappedValue = $0
+            }
+        )
     }
 }
 
@@ -190,16 +199,39 @@ extension Binding {
 
 extension Binding {
     public func _asOptional(defaultValue: Value) -> Binding<Optional<Value>> {
-        .init(
-            get: { self.wrappedValue },
-            set: { self.wrappedValue = $0 ?? defaultValue }
+        Binding<Optional<Value>>(
+            get: {
+                self.wrappedValue
+            },
+            set: {
+                self.wrappedValue = $0 ?? defaultValue
+            }
+        )
+    }
+    
+    public func _asOptional(defaultValue: Value) -> Binding<Optional<Value>> where Value: Equatable {
+        Binding<Optional<Value>>(
+            get: {
+                self.wrappedValue
+            },
+            set: { (newValue: Value?) in
+                if let newValue {
+                    self.wrappedValue = newValue
+                } else {
+                    self.wrappedValue = defaultValue
+                }
+            }
         )
     }
     
     public func _asOptional() -> Binding<Optional<Value>> {
-        .init(
-            get: { self.wrappedValue },
-            set: { self.wrappedValue = $0 ?? self.wrappedValue }
+        Binding<Optional<Value>>(
+            get: {
+                self.wrappedValue
+            },
+            set: {
+                self.wrappedValue = $0 ?? self.wrappedValue
+            }
         )
     }
     
@@ -210,7 +242,9 @@ extension Binding {
         )
     }
     
-    public func withDefaultValue<T: Equatable>(_ defaultValue: T) -> Binding<T> where Value == Optional<T> {
+    public func withDefaultValue<T: Equatable>(
+        _ defaultValue: T
+    ) -> Binding<T> where Value == Optional<T> {
         Binding<T>(
             get: {
                 self.wrappedValue ?? defaultValue

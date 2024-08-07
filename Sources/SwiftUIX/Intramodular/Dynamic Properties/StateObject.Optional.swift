@@ -9,7 +9,7 @@ extension StateObject {
     /// A property wrapper type that subscribes to an (optional) observable object and invalidates a view whenever the observable object changes.
     @propertyWrapper
     public struct Optional: DynamicProperty {
-        private typealias Container = _ObservableObjectBox<ObjectType, ObjectType?>
+        private typealias Container = _ObservableObjectMutableBox<ObjectType, ObjectType?>
         
         private let base: ObjectType?
         
@@ -17,15 +17,20 @@ extension StateObject {
         
         /// The current state value.
         public var wrappedValue: ObjectType? {
-            if observedContainer.base !== base {
-                observedContainer.base = base
+            get {
+                if observedContainer.base !== base {
+                    observedContainer.base = base
+                }
+                
+                return base
+            } nonmutating set {
+                observedContainer.base = newValue
             }
-            
-            return base
         }
         
         /// Initialize with the provided initial value.
         public init(wrappedValue value: ObjectType?) {
+            self._observedContainer = .init(wrappedValue: .init(base: value))
             self.base = value
         }
         

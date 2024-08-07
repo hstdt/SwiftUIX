@@ -11,6 +11,7 @@ import SwiftUI
 @frozen
 public enum _CocoaHostingViewStateFlag {
     case didJustMoveToSuperview
+    case hasAppearedAndIsCurrentlyVisible
 }
 
 /// These are special flags that can be set for `_CocoaHostingView` to temporarily override UIKit/AppKit behavior.
@@ -43,7 +44,8 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
     
     public var _hostingViewConfigurationFlags: Set<_CocoaHostingViewConfigurationFlag> = []
     public var _hostingViewStateFlags: Set<_CocoaHostingViewStateFlag> = []
-    
+    public var _overrideSizeForUpdateConstraints: OptionalDimensions = nil
+
     public var _configuration: CocoaHostingControllerConfiguration = .init() {
         didSet {
             rootView.parentConfiguration = _configuration
@@ -60,9 +62,7 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         }
     }
     
-    public var _overrideSizeForUpdateConstraints: OptionalDimensions = nil
-    
-#if os(macOS)
+    #if os(macOS)
     @_optimize(speed)
     @inline(__always)
     override open var needsLayout: Bool {
@@ -113,7 +113,10 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         super.updateConstraints()
     }
     
-    func copyLayoutConstraint(_ constraint: NSLayoutConstraint, constant: CGFloat) -> NSLayoutConstraint {
+    func copyLayoutConstraint(
+        _ constraint: NSLayoutConstraint,
+        constant: CGFloat
+    ) -> NSLayoutConstraint {
         return NSLayoutConstraint(
             item: constraint.firstItem!,
             attribute: constraint.firstAttribute,
@@ -124,19 +127,19 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
             constant: constant
         )
     }
-#endif
+    #endif
     
-#if os(macOS)
+    #if os(macOS)
     override open var acceptsFirstResponder: Bool {
         if _hostingViewConfigurationFlags.contains(.disableResponderChain) {
             return false
         }
         
         return true
-    }
-#endif
+        }
+    #endif
     
-#if os(macOS)
+    #if os(macOS)
     override open func becomeFirstResponder() -> Bool {
         guard !_hostingViewConfigurationFlags.contains(.invisible) else {
             return false
@@ -148,9 +151,9 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         
         return super.becomeFirstResponder()
     }
-#endif
+    #endif
     
-#if os(macOS)
+    #if os(macOS)
     override open func draw(_ dirtyRect: NSRect) {
         guard !_hostingViewConfigurationFlags.contains(.invisible) else {
             return
@@ -242,7 +245,7 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         
         return super.touchesEnded(with: event)
     }
-#endif
+    #endif
     
     public init(mainView: Content) {
         super.init(
@@ -267,6 +270,11 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         self.rootView.parent = self
         
         _assembleCocoaHostingView()
+    }
+    
+    @_disfavoredOverload
+    public convenience init(rootView: Content) {
+        self.init(mainView: rootView)
     }
     
     public required dynamic init?(coder aDecoder: NSCoder) {
@@ -297,7 +305,7 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         super.invalidateIntrinsicContentSize()
     }
     
-#if os(macOS)
+    #if os(macOS)
     override open func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
     }
@@ -358,7 +366,7 @@ open class _CocoaHostingView<Content: View>: AppKitOrUIKitHostingView<CocoaHosti
         
         super.resize(withOldSuperviewSize: oldSize)
     }
-#endif
+    #endif
 }
 
 extension _CocoaHostingView {

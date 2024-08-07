@@ -11,29 +11,29 @@ import SwiftUI
 public struct PersistentObject<Value>: DynamicProperty {
     private let thunk: () -> AnyObject?
     
-    @State private var objectContainer: _AnyObservableObjectBox<Value>
-    
-    @ObservedObject private var observedObjectContainer: _AnyObservableObjectBox<Value>
+    @State private var objectContainer: _AnyObservableObjectMutableBox<Value>
+    @State private var foo: Bool = false
+
+    @ObservedObject package var observedObjectContainer: _AnyObservableObjectMutableBox<Value>
     
     public var wrappedValue: Value {
         get {
-            if let object = objectContainer.__unsafe_opaque_base {
-                observedObjectContainer.__unsafe_opaque_base = object
-                
+            _ = foo
+            
+            if objectContainer.__unsafe_opaque_base != nil {                
                 return objectContainer.wrappedValue
             } else {
-                let object = thunk()
-                
-                objectContainer.__unsafe_opaque_base = object
-                observedObjectContainer.__unsafe_opaque_base = object
-                
-                return objectContainer.wrappedValue
+                return _thunkUnconditionally()
             }
         } nonmutating set {
-            observedObjectContainer.objectWillChange.send()
+            _ = foo
             
-            objectContainer.wrappedValue = newValue
-            observedObjectContainer.wrappedValue = newValue
+            observedObjectContainer.objectWillChange.send()
+
+            objectContainer.__unsafe_opaque_base = newValue
+            observedObjectContainer.__unsafe_opaque_base = objectContainer.__unsafe_opaque_base
+            
+            foo.toggle()
         }
     }
     
@@ -45,25 +45,25 @@ public struct PersistentObject<Value>: DynamicProperty {
         wrappedValue thunk: @autoclosure @escaping () -> Value
     ) where Value: ObservableObject {
         self.thunk = thunk
-        self._objectContainer = State(initialValue: _ObservableObjectBox(makeBase: thunk))
-        self._observedObjectContainer = ObservedObject(initialValue: _ObservableObjectBox(makeBase: thunk))
+        self._objectContainer = State(initialValue: _ObservableObjectMutableBox(makeBase: thunk))
+        self._observedObjectContainer = ObservedObject(initialValue: _ObservableObjectMutableBox(makeBase: thunk))
     }
     
     public init<T: ObservableObject>(
         wrappedValue thunk: @autoclosure @escaping () -> Value
     ) where Value == Optional<T> {
         self.thunk = { thunk() }
-        self._objectContainer = State(initialValue: _ObservableObjectBox(base: nil))
-        self._observedObjectContainer = ObservedObject(initialValue: _ObservableObjectBox(base: nil))
+        self._objectContainer = State(initialValue: _ObservableObjectMutableBox(base: nil))
+        self._observedObjectContainer = ObservedObject(initialValue: _ObservableObjectMutableBox(base: nil))
     }
     
     public init<T: ObservableObject & _SwiftUIX_MutablePropertyWrapperObject>(
         unwrapping thunk: @autoclosure @escaping () -> T
-    ) where Value: ObservableObject, Value == T._SwiftUIX_WrappedValueType {
+    ) where Value == T._SwiftUIX_WrappedValueType {
         self.thunk = { thunk() }
         
-        let makeBox: (() -> _AnyObservableObjectBox<T._SwiftUIX_WrappedValueType>) = {
-            _ObservableObjectBox<T, T._SwiftUIX_WrappedValueType>(
+        let makeBox: (() -> _AnyObservableObjectMutableBox<T._SwiftUIX_WrappedValueType>) = {
+            _ObservableObjectMutableBox<T, T._SwiftUIX_WrappedValueType>(
                 base: nil,
                 wrappedValue: { (propertyWrapper: inout T?) in
                     let _propertyWrapper: T
@@ -91,13 +91,42 @@ public struct PersistentObject<Value>: DynamicProperty {
     
     public init<T: ObservableObject & _SwiftUIX_MutablePropertyWrapperObject>(
         unwrapping thunk: @escaping () -> T
-    ) where Value: ObservableObject, Value == T._SwiftUIX_WrappedValueType {
+    ) where Value == T._SwiftUIX_WrappedValueType {
         self.init(unwrapping: thunk())
     }
     
     public mutating func update() {
         _objectContainer.update()
         _observedObjectContainer.update()
+    }
+    
+    
+    @discardableResult
+    private func _thunkUnconditionally() -> Value {
+        var isFirstThunk: Bool = false
+        
+        if objectContainer.__unsafe_opaque_base == nil {
+            assert(observedObjectContainer.__unsafe_opaque_base == nil)
+            
+            isFirstThunk = true
+        }
+        
+        let result: AnyObject? = thunk()
+        
+        objectContainer.__unsafe_opaque_base = result
+        observedObjectContainer.__unsafe_opaque_base = result
+        
+        if isFirstThunk {
+            Task.detached { @MainActor in
+                foo.toggle()
+            }
+        }
+        
+        return observedObjectContainer.wrappedValue
+    }
+    
+    public func _toggleFoo() {
+        foo.toggle()
     }
 }
 
@@ -106,6 +135,7 @@ extension PersistentObject {
     public struct Wrapper {
         public let base: PersistentObject
         
+        @MainActor
         public var binding: Binding<Value> {
             Binding<Value>(
                 get: {
@@ -117,6 +147,7 @@ extension PersistentObject {
             )
         }
         
+        @MainActor
         public subscript<T>(
             dynamicMember keyPath: ReferenceWritableKeyPath<Value, T>
         ) -> Binding<T> {
@@ -130,4 +161,8 @@ extension PersistentObject {
             )
         }
     }
+}
+
+extension PersistentObject: @unchecked Sendable where Value: Sendable {
+    
 }

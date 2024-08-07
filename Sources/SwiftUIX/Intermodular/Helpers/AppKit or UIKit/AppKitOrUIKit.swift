@@ -21,8 +21,8 @@ extension UIColor {
 }
 
 extension UIEdgeInsets {
-    var edgeInsets: EdgeInsets {
-        .init(top: top, leading: left, bottom: bottom, trailing: right)
+    var _SwiftUI_edgeInsets: EdgeInsets {
+        EdgeInsets(top: top, leading: left, bottom: bottom, trailing: right)
     }
 }
 
@@ -71,6 +71,12 @@ import AppKit
 
 public typealias AppKitOrUIKitGraphicsImageRenderer = NSGraphicsImageRenderer
 
+extension NSEdgeInsets {
+    public var _SwiftUI_edgeInsets: EdgeInsets {
+        EdgeInsets(top: top, leading: left, bottom: bottom, trailing: right)
+    }
+}
+
 extension NSImage.SymbolConfiguration {
     public convenience init(pointSize: CGFloat) {
         self.init(pointSize: pointSize, weight: .regular)
@@ -94,6 +100,14 @@ extension NSWindow {
             
             if self.isVisible != isVisible {
                 self.setIsVisible(isVisible)
+                
+                if isVisible {
+                    DispatchQueue.main.async {
+                        #if os(macOS)
+                        NotificationCenter.default.post(name: NSWindow.didBecomeVisibleNotification, object: self)
+                        #endif
+                    }
+                }
             }
         }
     }

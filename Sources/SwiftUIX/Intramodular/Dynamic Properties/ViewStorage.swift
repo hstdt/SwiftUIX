@@ -8,7 +8,7 @@ import SwiftUI
 
 @frozen
 @propertyWrapper
-public struct ViewStorage<Value>: DynamicProperty {
+public struct ViewStorage<Value>: Identifiable, DynamicProperty {
     public final class ValueBox: AnyObservableValue<Value> {
         @Published fileprivate var value: Value
         
@@ -25,6 +25,10 @@ public struct ViewStorage<Value>: DynamicProperty {
             
             super.init()
         }
+    }
+    
+    public var id: ObjectIdentifier {
+        ObjectIdentifier(valueBox)
     }
     
     @State fileprivate var _valueBox: ValueBox
@@ -50,6 +54,20 @@ public struct ViewStorage<Value>: DynamicProperty {
     }
 }
 
+// MARK: - Conformances
+
+extension ViewStorage: Equatable where Value: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.wrappedValue == rhs.wrappedValue
+    }
+}
+
+extension ViewStorage: Hashable where Value: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        wrappedValue.hash(into: &hasher)
+    }
+}
+
 // MARK: - API
 
 extension ViewStorage {
@@ -65,6 +83,7 @@ extension ViewStorage {
     }
 }
 
+@MainActor
 extension ViewStorage {
     @ViewBuilder
     public func withObservedValue<Content: View>(
