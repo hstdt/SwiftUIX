@@ -8,6 +8,7 @@ import Combine
 import Swift
 import SwiftUI
 
+@_documentation(visibility: internal)
 public class _AnyWindowPresentationController: ObservableObject {
     init() {
         
@@ -17,8 +18,10 @@ public class _AnyWindowPresentationController: ObservableObject {
 @available(macCatalystApplicationExtension, unavailable)
 @available(iOSApplicationExtension, unavailable)
 @available(tvOSApplicationExtension, unavailable)
+@_documentation(visibility: internal)
 public final class _WindowPresentationController<Content: View>: _AnyWindowPresentationController {
-    public enum ContentBacking {
+    @_documentation(visibility: internal)
+public enum ContentBacking {
         case view(Content)
         case hostingController(AppKitOrUIKitHostingWindow<Content>._ContentViewControllerType)
         
@@ -119,7 +122,11 @@ public final class _WindowPresentationController<Content: View>: _AnyWindowPrese
             
             _isVisible = newValue
             
-            if _contentWindow == nil {
+            if let _contentWindow {
+                if _contentWindow.isVisible != _isVisible {
+                    _setNeedsUpdate()
+                }
+            } else {
                 _setNeedsUpdate()
             }
         }
