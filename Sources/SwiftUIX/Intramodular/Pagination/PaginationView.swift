@@ -50,18 +50,15 @@ public struct PaginationView<Page: View>: View {
     
     /// The current page index internally used by `PaginationView`.
     /// Never access this directly, it is marked public as a workaround to a compiler bug.
-    @inlinable
     @State public var _currentPageIndex = 0
     
     /// Never access this directly, it is marked public as a workaround to a compiler bug.
-    @inlinable
     @DelayedState public var _progressionController: ProgressionController?
     
     private var _scrollViewConfiguration: CocoaScrollViewConfiguration<AnyView> = nil
     
     var paginationState: Binding<PaginationState>?
     
-    @inlinable
     public init(
         content: AnyForEach<Page>,
         axis: Axis = .horizontal,
@@ -81,7 +78,6 @@ public struct PaginationView<Page: View>: View {
         }
     }
     
-    @inlinable
     public init<Data, ID>(
         content: ForEach<Data, ID, Page>,
         axis: Axis = .horizontal,
@@ -137,7 +133,6 @@ public struct PaginationView<Page: View>: View {
 // MARK: - Initializers
 
 extension PaginationView {
-    @inlinable
     public init<Data: RandomAccessCollection, ID: Hashable>(
         _ data: Data,
         id: KeyPath<Data.Element, ID>,
@@ -154,7 +149,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<Data, ID>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -169,7 +163,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<Data, ID>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -186,7 +179,6 @@ extension PaginationView {
 }
 
 extension PaginationView {
-    @inlinable
     public init(
         pages: [Page],
         axis: Axis = .horizontal,
@@ -202,7 +194,6 @@ extension PaginationView {
     }
     
     @_disfavoredOverload
-    @inlinable
     public init(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -217,7 +208,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -237,7 +227,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -258,7 +247,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -280,7 +268,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -303,7 +290,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -327,7 +313,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -352,7 +337,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -378,7 +362,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View, C8: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -405,7 +388,6 @@ extension PaginationView {
         )
     }
     
-    @inlinable
     public init<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View, C8: View, C9: View>(
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
@@ -437,29 +419,24 @@ extension PaginationView {
 // MARK: - API
 
 extension PaginationView {
-    @inlinable
     public func pageIndicatorAlignment(_ alignment: Alignment) -> Self {
         then({ $0.pageIndicatorAlignment = alignment })
     }
     
-    @inlinable
     public func interPageSpacing(_ interPageSpacing: CGFloat) -> Self {
         then({ $0.interPageSpacing = interPageSpacing })
     }
     
-    @inlinable
     public func cyclesPages(_ cyclesPages: Bool) -> Self {
         then({ $0.cyclesPages = cyclesPages })
     }
 }
 
 extension PaginationView {
-    @inlinable
     public func initialPageIndex(_ initialPageIndex: Int) -> Self {
         then({ $0.initialPageIndex = initialPageIndex })
     }
     
-    @inlinable
     public func currentPageIndex(_ currentPageIndex: Binding<Int>) -> Self {
         then({ $0.currentPageIndex = currentPageIndex })
     }
